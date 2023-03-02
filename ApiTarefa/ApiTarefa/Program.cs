@@ -1,9 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+    opt.UseInMemoryDatabase("TarefasDB"));
 
 var app = builder.Build();
 
@@ -14,30 +18,46 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapGet("/", () => "Olá Mundo");
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("frases", async () =>
+await new HttpClient().GetStringAsync("https://ron-swanson-quotes.herokuapp.com/v2/quotes"));
+
+
+// Definição do mapeamento 
+
+//retornar uma lista de tarefas (essa expressão lambda vai atuar como Manipulador de rota)
+app.MapGet("/tarefas", async (AppDbContext db) => await db.Tarefas.ToListAsync());
+
+//incluir as tarefas
+app.MapPost("/tarefas", async (Tarefa tarefa, AppDbContext db) =>
 {
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    db.Tarefas.Add(tarefa);
+    await db.SaveChangesAsync();
+    return Results.Created($"/tarefas/{tarefa.Id}", tarefa);
+    //Created vai retornar no body do request o Id da tarefa que foi incluida
+});
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
+
+
+/* essa classe permite gerenciar informações sobre tarefas que representam atividades
+que poderão estar concluídas ou não */
+class Tarefa
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    public int Id { get; set; }
+    public string? Nome { get; set; }
+    public bool IsConcluida { get; set; }
+}
+
+/* essa class coordena a funcionalidade do EntityFrameworkCore pro nosso modelo
+ de dados definidos por tarefa */
+class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    { }
+
+    public DbSet<Tarefa> Tarefas => Set<Tarefa>();
 }
