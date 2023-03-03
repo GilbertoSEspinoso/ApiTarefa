@@ -30,6 +30,14 @@ await new HttpClient().GetStringAsync("https://ron-swanson-quotes.herokuapp.com/
 //retornar uma lista de tarefas (essa expressão lambda vai atuar como Manipulador de rota)
 app.MapGet("/tarefas", async (AppDbContext db) => await db.Tarefas.ToListAsync());
 
+//retornar uma unica tarefa
+app.MapGet("/tarefas/{id}", async (int id, AppDbContext db) =>
+await db.Tarefas.FindAsync(id) is Tarefa tarefa ? Results.Ok(tarefa) : Results.NotFound());
+
+//retornar tarefas que foram concluidas
+app.MapGet("/tarefas/concluida", async (AppDbContext db) =>
+                                    await db.Tarefas.Where(t => t.IsConcluida).ToListAsync());
+
 //incluir as tarefas
 app.MapPost("/tarefas", async (Tarefa tarefa, AppDbContext db) =>
 {
@@ -37,6 +45,31 @@ app.MapPost("/tarefas", async (Tarefa tarefa, AppDbContext db) =>
     await db.SaveChangesAsync();
     return Results.Created($"/tarefas/{tarefa.Id}", tarefa);
     //Created vai retornar no body do request o Id da tarefa que foi incluida
+});
+
+//atualizar uma tarefa
+app.MapPut("/tarefa/{id}", async (int id, Tarefa inputTarefa, AppDbContext db) =>
+{
+    var tarefa = await db.Tarefas.FindAsync(id);
+    if (tarefa is null) return Results.NotFound();
+
+    tarefa.Nome = inputTarefa.Nome;
+    tarefa.IsConcluida = inputTarefa.IsConcluida;
+
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+//Deletar uma tarefa
+app.MapDelete("/tarefa/{id}", async (int id, AppDbContext db) =>
+{
+    if (await db.Tarefas.FindAsync(id) is Tarefa tarefa)
+    {
+        db.Tarefas.Remove(tarefa);
+        await db.SaveChangesAsync();
+        return Results.Ok();
+    }
+    return Results.NotFound();
 });
 
 app.Run();
