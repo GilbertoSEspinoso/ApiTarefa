@@ -12,7 +12,7 @@ O  objetivo desse projeto foi criar uma Minimal API com Entity Framework Core In
 
 
 
--Meu primeiro contato com uma minimal API, um projeto bem simples porém muito útil no aprendizado para quem está começando, deixei algumas anotações salvas nos métodos de extensão Map para fins didáticos.
+-Meu primeiro contato com uma minimal API, um projeto bem simples, porém muito útil no aprendizado, deixei algumas anotações salvas nos métodos de extensão Map para fins didáticos.
 
 -Esse projeto condensa um pouco do meu processo no curso Web API.NET Core Essencial e que sirva de base para quem está começando, assim como eu.
 
